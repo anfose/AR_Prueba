@@ -19,6 +19,7 @@ Al apuntar la cámara del celular al marcador impreso, sobre el papel aparece **
    - `marcador.patt`
    - `marcador-imprimir.png`
 3. **Subir su contenido.** Sube el `.glb` o el `.mp4` con *Add file → Upload files*.
+   > ⚠️ **Ponle el nombre definitivo al archivo en tu computador antes de subirlo**: sin espacios, sin tildes y sin paréntesis, por ejemplo `mi-modelo.glb`. **Nunca abras con el lápiz (*Edit*) un video, un modelo o una imagen para cambiarle el nombre**: el editor de GitHub los guarda vacíos y el archivo se daña. Si quedó mal nombrado, bórralo y súbelo de nuevo.
 4. **Configurar.** Abre `index.html`, pulsa el lápiz (*Edit*) y cambia solo el bloque CONFIGURACIÓN:
    ```js
    titulo: 'Nombre de mi pieza',
@@ -48,6 +49,8 @@ Si algo falla al cargar, la página muestra un aviso en rojo con el nombre del a
 
 **Marcador**
 - Usa formas grandes en blanco y negro que no sean simétricas. El generador avisa si la imagen sirve mal.
+- Usa **fondo blanco**. Una imagen con fondo negro se funde con el borde del marcador, y la cámara no la reconoce.
+- El dibujo debe ocupar casi todo el cuadro. Un logo pequeño o de líneas finas se pierde, porque el sistema lo reduce a 16 × 16 puntos.
 - Imprímelo en papel mate y deja el borde blanco alrededor del cuadro negro. El cuadro negro debe medir 8 cm o más.
 
 ## Límites de GitHub que conviene conocer

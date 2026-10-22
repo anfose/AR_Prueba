@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  <title>Plantilla WebAR · Historia en escenas</title>
+
+  <!--
+    LIBRERÍAS (no tocar salvo que sepas lo que haces)
+    A-Frame 1.6.0 es la versión con la que AR.js documenta su compatibilidad.
+    AR.js 3.4.8 (build "aframe-ar": rastreo por marcador, funciona en Android e iPhone).
+  -->
+  <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@ar-js-org/ar.js@3.4.8/aframe/build/aframe-ar.js"></script>
+
+  <style>
+    html, body { margin: 0; height: 100%; overflow: hidden; font-family: system-ui, sans-serif; }
+
+    /* Capa de interfaz encima de la cámara */
+    #interfaz {
+      position: fixed; inset: 0; z-index: 10;
+      display: flex; flex-direction: column; justify-content: space-between;
+      pointer-events: none; padding: 16px; box-sizing: border-box;
+    }
+    #estado {
+      align-self: center; padding: 8px 14px; border-radius: 999px;
+      background: rgba(0,0,0,.6); color: #fff; font-size: 14px;
+    }
+    #estado.visible { background: rgba(20,120,60,.8); }
+
+    #panel {
+      background: rgba(0,0,0,.65); color: #fff; border-radius: 14px;
+      padding: 14px 16px; pointer-events: auto;
+    }
+    #contador { font-size: 12px; opacity: .7; margin-bottom: 4px; }
+    #subtitulo { font-size: 17px; line-height: 1.35; min-height: 2.7em; }
+    #controles { display: flex; gap: 8px; margin-top: 12px; }
+    #controles button {
+      flex: 1; padding: 12px; border: 0; border-radius: 10px;
+      font-size: 15px; font-weight: 600; background: #fff; color: #111;
+    }
+    #controles button:disabled { opacity: .35; }
+  </style>
+</head>
+<body>
+
+  <!-- ===== INTERFAZ (texto en HTML: admite tildes y ñ sin problema) ===== -->
+  <div id="interfaz">
+    <div id="estado">Apunta la cámara al marcador</div>
+    <div id="panel">
+      <div id="contador"></div>
+      <div id="subtitulo"></div>
+      <div id="controles">
+        <button id="anterior">◀ Anterior</button>
+        <button id="siguiente">Siguiente ▶</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ESCENA DE REALIDAD AUMENTADA ===== -->
+  <a-scene
+    embedded
+    arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;"
+    xr-mode-ui="enabled: false"
+    renderer="logarithmicDepthBuffer: true; colorManagement: true;"
+    device-orientation-permission-ui="enabled: false">
+
+    <!-- RECURSOS: declara aquí imágenes, videos y modelos 3D que vayas a usar.
+         Ponlos en la misma carpeta que este archivo. -->
+    <a-assets>
+      <!-- <img id="foto1" src="foto1.jpg"> -->
+      <!-- <video id="video1" src="video1.mp4" muted playsinline loop crossorigin="anonymous"></video> -->
+      <!-- <a-asset-item id="modelo1" src="modelo1.glb"></a-asset-item> -->
+    </a-assets>
+
+    <!-- MARCADOR: "hiro" es el marcador estándar (imprime marcador-hiro.png).
+         Todo lo que está dentro aparece anclado sobre él.
+         Unidades: 1 = el ancho del marcador. -->
+    <a-marker id="marcador" preset="hiro">
+
+      <!-- =====================================================
+           ESCENAS: cada bloque <a-entity class="escena"> es un momento
+           de la historia. Edita "data-subtitulo" (el texto que se lee
+           abajo) y el contenido 3D de cada una. Puedes añadir o borrar
+           escenas copiando bloques completos; el orden en el archivo
+           es el orden de la historia.
+           ===================================================== -->
+
+      <!-- ESCENA 1 · EDITA AQUÍ -->
+      <a-entity class="escena"
+        data-subtitulo="Escena 1. Aquí empieza la historia: presenta el lugar o el personaje.">
+        <a-box position="0 0.5 0" scale="0.8 0.8 0.8" color="#E8A33D"
+               animation="property: rotation; to: 0 360 0; loop: true; dur: 6000; easing: linear"></a-box>
+      </a-entity>
+
+      <!-- ESCENA 2 · EDITA AQUÍ -->
+      <a-entity class="escena"
+        data-subtitulo="Escena 2. Algo cambia: un conflicto, una pregunta, un descubrimiento.">
+        <a-sphere position="0 0.6 0" radius="0.4" color="#3D7DE8"
+                  animation="property: position; to: 0 1 0; dir: alternate; loop: true; dur: 1200"></a-sphere>
+        <a-cylinder position="0 0.05 0" radius="0.6" height="0.1" color="#222"></a-cylinder>
+      </a-entity>
+
+      <!-- ESCENA 3 · EDITA AQUÍ -->
+      <a-entity class="escena"
+        data-subtitulo="Escena 3. Cierre: qué queda, qué se transforma.">
+        <!-- Texto 3D: la fuente por defecto no muestra bien tildes ni ñ.
+             Para textos con tildes usa el subtítulo de abajo. -->
+        <a-text value="FIN" align="center" position="0 0.6 0" rotation="-90 0 0"
+                width="4" color="#FFFFFF"></a-text>
+        <a-plane position="0 0.01 0" rotation="-90 0 0" width="1.2" height="1.2" color="#B33D3D"></a-plane>
+      </a-entity>
+
+      <!-- EJEMPLOS PARA COPIAR DENTRO DE UNA ESCENA
+           (primero declara el recurso en <a-assets>):
+
+           Imagen plana sobre el marcador:
+           <a-image src="#foto1" rotation="-90 0 0" width="1" height="1"></a-image>
+
+           Video (en iPhone debe ir muted + playsinline; se activa al tocar "Siguiente"):
+           <a-video src="#video1" rotation="-90 0 0" width="1.6" height="0.9"></a-video>
+
+           Modelo 3D (.glb o .gltf):
+           <a-entity gltf-model="#modelo1" scale="0.5 0.5 0.5"></a-entity>
+      -->
+    </a-marker>
+
+    <a-entity camera></a-entity>
+  </a-scene>
+
+  <!-- ===== LÓGICA DE LA NARRATIVA (no necesitas editarla) ===== -->
+  <script>
+    const escenas    = Array.from(document.querySelectorAll('.escena'));
+    const subtitulo  = document.getElementById('subtitulo');
+    const contador   = document.getElementById('contador');
+    const estado     = document.getElementById('estado');
+    const btnAnt     = document.getElementById('anterior');
+    const btnSig     = document.getElementById('siguiente');
+    const marcador   = document.getElementById('marcador');
+    let actual = 0;
+
+    function mostrar(i) {
+      actual = Math.max(0, Math.min(i, escenas.length - 1));
+      escenas.forEach((e, n) => e.setAttribute('visible', n === actual));
+
+      // Pausa los videos de las escenas ocultas y reproduce los de la visible
+      escenas.forEach((e, n) => e.querySelectorAll('a-video').forEach(v => {
+        const id = (v.getAttribute('src') || '').replace('#', '');
+        const el = id && document.getElementById(id);
+        if (el) n === actual ? el.play().catch(() => {}) : el.pause();
+      }));
+
+      subtitulo.textContent = escenas[actual].dataset.subtitulo || '';
+      contador.textContent  = `Escena ${actual + 1} de ${escenas.length}`;
+      btnAnt.disabled = actual === 0;
+      btnSig.disabled = actual === escenas.length - 1;
+    }
+
+    btnAnt.addEventListener('click', () => mostrar(actual - 1));
+    btnSig.addEventListener('click', () => mostrar(actual + 1));
+
+    marcador.addEventListener('markerFound', () => {
+      estado.textContent = 'Marcador detectado';
+      estado.classList.add('visible');
+    });
+    marcador.addEventListener('markerLost', () => {
+      estado.textContent = 'Apunta la cámara al marcador';
+      estado.classList.remove('visible');
+    });
+
+    mostrar(0);
+  </script>
+</body>
+</html>

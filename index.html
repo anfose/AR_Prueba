@@ -11,16 +11,16 @@
   <script>
     const CONFIG = {
       // Título que aparece en pantalla (admite tildes y ñ)
-      titulo: 'Prueba realidad aumentada',
+      titulo: 'Mi experiencia en realidad aumentada',
 
       // Archivo .patt del marcador (créalo con generador.html)
-      marcador: 'marcador.patt',
+      marcador: 'marcador/marcador.patt',
 
       // Tipo de contenido: 'modelo' o 'video'
-      tipo: 'video',
+      tipo: 'modelo',
 
       // Archivo dentro del repositorio. 'modelo': .glb  ·  'video': .mp4
-      archivo: 'Animacion_Mixamo.mp4',
+      archivo: 'ejemplos/modelo.glb',
 
       // Ajustes de posición. 1 = el ancho del cuadro negro del marcador
       escala: 1,        // tamaño del contenido
@@ -101,9 +101,19 @@
 
     function mostrarError(texto) {
       const caja = document.getElementById('error');
-      caja.textContent = texto;
+      caja.textContent = caja.textContent ? caja.textContent + ' · ' + texto : texto;
       caja.style.display = 'block';
     }
+
+    // Verifica que existan los archivos indispensables y avisa si falta alguno
+    const calibracion = (HTMLElement.prototype.getAttribute.call(escena, 'arjs').match(/cameraParametersUrl:\s*([^;]+)/) || [])[1];
+    [[calibracion, 'calibración de cámara'], [CONFIG.marcador, 'marcador'], [CONFIG.archivo, 'contenido']]
+      .forEach(([ruta, nombre]) => {
+        if (!ruta) return;
+        fetch(ruta.trim(), { method: 'HEAD' }).then(r => {
+          if (!r.ok) mostrarError(`No se encuentra el archivo de ${nombre}: "${ruta.trim()}". Revisa el nombre y la carpeta.`);
+        }).catch(() => {});
+      });
 
     // Marcador
     const marcador = document.createElement('a-marker');

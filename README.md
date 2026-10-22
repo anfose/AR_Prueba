@@ -1,41 +1,61 @@
-[LEEME.md](https://github.com/user-attachments/files/33798299/LEEME.md)
-# Plantilla WebAR · Historia en escenas
+# Plantilla WebAR · un marcador, un contenido
 
-Experiencia de realidad aumentada que se abre desde el navegador del celular (Android o iPhone), sin instalar ninguna app. Al apuntar la cámara al marcador impreso aparece contenido 3D. El estudiante avanza la historia escena por escena con los botones, y cada escena lleva un subtítulo.
+Al apuntar la cámara del celular al marcador impreso, sobre el papel aparece **un modelo 3D (.glb) o un video (.mp4)**. Todo vive en un repositorio de GitHub y se publica gratis con GitHub Pages. No hace falta instalar ninguna app ni pagar alojamiento.
 
-Tecnología: A-Frame 1.6.0 + AR.js 3.4.8, ambos gratuitos y de código abierto.
+## Qué hay en la carpeta
 
-## Archivos
+| Archivo | Para qué sirve |
+|---|---|
+| `index.html` | La experiencia. Solo se edita el bloque **CONFIGURACIÓN** del inicio. |
+| `generador.html` | Convierte una imagen en marcador. Entrega el `.patt` y el PNG para imprimir. |
+| `marcador/` | El marcador en uso: `marcador.patt` y `marcador-imprimir.png`. |
+| `ejemplos/` | Un modelo y un video de prueba. Se pueden borrar al poner los propios. |
+| `datos/camera_para.dat` | Calibración de la cámara. No se toca. |
 
-- `index.html`: la experiencia completa. Es el único archivo que hay que editar.
-- `marcador-hiro.png`: el marcador. Imprímelo en papel blanco, idealmente de 8 cm o más, o muéstralo en otra pantalla.
+## Pasos para cada estudiante
 
-## Cómo personalizarla
+1. **Crear su copia.** Entra al repositorio del curso y usa *Use this template → Create a new repository*. El repositorio debe ser público.
+2. **Crear su marcador.** Abre `generador.html` en el computador y elige una imagen. Descarga los dos archivos y súbelos a la carpeta `marcador/` con estos nombres exactos, reemplazando los de ejemplo:
+   - `marcador.patt`
+   - `marcador-imprimir.png`
+3. **Subir su contenido.** Sube el `.glb` o el `.mp4` con *Add file → Upload files*.
+4. **Configurar.** Abre `index.html`, pulsa el lápiz (*Edit*) y cambia solo el bloque CONFIGURACIÓN:
+   ```js
+   titulo: 'Nombre de mi pieza',
+   marcador: 'marcador/marcador.patt',
+   tipo: 'video',              // 'modelo' o 'video'
+   archivo: 'mi-video.mp4',    // nombre exacto del archivo subido, con su carpeta si la tiene
+   escala: 1, altura: 0, giro: 0,
+   ```
+   Pulsa *Commit changes*.
+5. **Publicar.** Ve a *Settings → Pages* y elige la rama `main` y la carpeta `/ (root)`. En uno o dos minutos la experiencia queda en `https://USUARIO.github.io/REPOSITORIO/`.
+6. **Probar.** Imprime `marcador-imprimir.png` y abre la dirección en el celular.
 
-Abre `index.html` en cualquier editor de texto y busca **"EDITA AQUÍ"**.
+Si algo falla al cargar, la página muestra un aviso en rojo con el nombre del archivo que no encontró.
 
-1. **Texto de cada escena:** cambia el contenido de `data-subtitulo="..."`.
-2. **Contenido 3D:** reemplaza las figuras de ejemplo (`a-box`, `a-sphere`…) por imágenes, videos o modelos 3D. Hay ejemplos listos para copiar al final del bloque del marcador.
-3. **Más o menos escenas:** copia o borra un bloque `<a-entity class="escena">` completo. El contador se ajusta solo.
-4. **Archivos propios** (fotos, .mp4, .glb): ponlos en la misma carpeta y declara cada uno en `<a-assets>`.
+## Preparar los archivos
 
-Medidas: 1 unidad equivale al ancho del marcador. `position="0 0.5 0"` significa media unidad por encima del papel.
+**Video (.mp4)**
+- Usa el códec H.264 y audio AAC. Es la combinación que funciona en iPhone y Android. HandBrake, por ejemplo, exporta así con sus perfiles web.
+- Mantenlo corto y liviano: idealmente menos de 15 MB y a 720p como máximo.
+- El video arranca en silencio, porque los celulares lo exigen. El botón "Activar sonido" lo enciende.
+- Se acomoda solo a la proporción del video (horizontal, vertical o cuadrado), acostado sobre el marcador.
 
-## Cómo publicarla gratis (GitHub Pages)
+**Modelo 3D (.glb)**
+- Debe ser un solo archivo `.glb` con las texturas incluidas. Los `.gltf` con archivos aparte o los `.obj` no sirven.
+- Procura que pese menos de 5 MB.
+- Si se ve gigante o diminuto, ajusta `escala`. Si queda hundido en el papel, sube `altura`.
 
-La cámara del celular solo funciona en páginas con HTTPS. GitHub Pages lo da sin costo.
+**Marcador**
+- Usa formas grandes en blanco y negro que no sean simétricas. El generador avisa si la imagen sirve mal.
+- Imprímelo en papel mate y deja el borde blanco alrededor del cuadro negro. El cuadro negro debe medir 8 cm o más.
 
-1. Crea una cuenta en github.com y un repositorio público nuevo.
-2. Sube `index.html`, `marcador-hiro.png` y tus recursos con *Add file → Upload files*.
-3. Ve a *Settings → Pages*, elige la rama `main` y la carpeta `/ (root)`, y guarda.
-4. En uno o dos minutos la experiencia queda publicada en `https://TU-USUARIO.github.io/NOMBRE-DEL-REPOSITORIO/`.
-5. Convierte esa dirección en un código QR para compartirla.
+## Límites de GitHub que conviene conocer
 
-## Limitaciones que conviene conocer
+- Cada archivo subido desde el navegador puede pesar **hasta 25 MB**.
+- El sitio publicado puede ocupar hasta 1 GB, y hay un límite flexible de 100 GB de tráfico al mes. Para un curso sobra.
+- Después de cada cambio, la publicación tarda uno o dos minutos en actualizarse. Si el celular sigue mostrando la versión anterior, recarga la página.
 
-- **Rastreo por marcador:** el contenido solo aparece mientras la cámara ve el marcador. No reconoce superficies como el piso o una mesa. Para eso hace falta WebXR, que en iPhone no funciona en Safari.
-- **Luz y tamaño:** el marcador necesita buena iluminación y su borde negro debe verse completo.
-- **Texto 3D (`a-text`):** la fuente por defecto no muestra bien tildes ni ñ. Pon los textos en español en el subtítulo.
-- **Videos en iPhone:** deben llevar `muted playsinline` y empiezan a reproducirse cuando la persona toca un botón.
-- **Modelos 3D:** procura que pesen menos de 5 MB cada uno, porque la página se descarga por datos móviles.
-- **Marcadores propios:** se pueden crear con el generador de AR.js (*AR.js Marker Training*). Hay que cambiar `preset="hiro"` por `type="pattern" url="mi-marcador.patt"`.
+## Para el docente
+
+En el repositorio original, activa *Settings → General → Template repository*. Así cada estudiante crea su copia con un clic y conserva toda la estructura.

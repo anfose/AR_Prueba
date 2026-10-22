@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Generador de marcadores</title>
+  <style>
+    :root { --tinta: #1b1b1b; --suave: #6b6b6b; --fondo: #f6f4f0; --tarjeta: #fff; --acento: #1f5fbf; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, sans-serif; color: var(--tinta); background: var(--fondo); }
+    main { max-width: 760px; margin: 0 auto; padding: 24px 16px 48px; }
+    h1 { font-size: 24px; margin: 0 0 6px; }
+    p { line-height: 1.5; }
+    .nota { color: var(--suave); font-size: 14px; }
+    .carga {
+      display: block; border: 2px dashed #bbb; border-radius: 12px; padding: 24px;
+      text-align: center; background: var(--tarjeta); cursor: pointer; margin: 18px 0;
+    }
+    .carga input { display: none; }
+    .carga strong { color: var(--acento); }
+    details { background: var(--tarjeta); border-radius: 12px; padding: 12px 16px; margin-bottom: 18px; }
+    summary { font-weight: 600; cursor: pointer; }
+    details li { margin: 6px 0; line-height: 1.4; }
+    #resultados { display: grid; gap: 16px; }
+    .item {
+      display: grid; grid-template-columns: 160px 1fr; gap: 16px; align-items: center;
+      background: var(--tarjeta); border-radius: 12px; padding: 14px;
+    }
+    .item img { width: 160px; height: 160px; border: 1px solid #ddd; }
+    .item input { width: 100%; padding: 8px; font-size: 15px; border: 1px solid #ccc; border-radius: 8px; }
+    .botones { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .botones a {
+      padding: 9px 12px; border-radius: 8px; background: var(--acento); color: #fff;
+      text-decoration: none; font-size: 14px; font-weight: 600;
+    }
+    .botones a.secundario { background: #e6e9ef; color: var(--tinta); }
+    .aviso { font-size: 13px; color: #9a5b00; margin-top: 8px; }
+    @media (max-width: 520px) {
+      .item { grid-template-columns: 1fr; justify-items: center; text-align: center; }
+      .botones { justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Generador de marcadores</h1>
+  <p>Convierte una imagen en el marcador de tu experiencia. Obtienes dos archivos con los nombres que la plantilla espera:
+     <code>marcador.patt</code>, el patrón que reconoce la cámara, y <code>marcador-imprimir.png</code>, el que imprimes.
+     Súbelos al repositorio reemplazando los que tienen el mismo nombre.</p>
+  <p class="nota">Todo ocurre en tu navegador: las imágenes no se suben a ningún servidor.</p>
+
+  <details>
+    <summary>Qué imagen funciona bien</summary>
+    <ul>
+      <li><b>Alto contraste y formas grandes.</b> El sistema reduce la imagen a 16 × 16 puntos, así que los detalles finos se pierden.</li>
+      <li><b>Que no sea simétrica.</b> Si se ve igual al girarla, el sistema no sabe hacia dónde mira el marcador.</li>
+      <li><b>Que cada marcador sea distinto de los demás.</b> Dos imágenes parecidas se confunden entre sí.</li>
+      <li><b>Fondo blanco y dibujo grande.</b> Un fondo negro se funde con el borde del marcador, y un logo pequeño o de líneas finas desaparece.</li>
+      <li><b>Imagen cuadrada.</b> Si no lo es, se recorta al cuadrado central.</li>
+      <li><b>Al imprimir:</b> deja el borde blanco alrededor del cuadro negro, usa papel mate y un tamaño de 8 cm o más.</li>
+    </ul>
+  </details>
+
+  <label class="carga">
+    <input type="file" id="archivos" accept="image/*">
+    <strong>Elige una imagen</strong><br>
+    <span class="nota">PNG o JPG</span>
+  </label>
+
+  <div id="resultados"></div>
+</main>
+
+<script>
+  // Proporción del patrón interior: debe coincidir con "patternRatio" en index.html (0.5)
+  const PROPORCION_PATRON = 0.5;
+  // Margen blanco alrededor del cuadro negro (fracción del total)
+  const MARGEN_BLANCO = 0.1;
+
+  // Recorta la imagen al cuadrado central y la devuelve como canvas
+  function cuadrado(img, lado) {
+    const c = document.createElement('canvas');
+    c.width = c.height = lado;
+    const m = Math.min(img.naturalWidth, img.naturalHeight);
+    const sx = (img.naturalWidth - m) / 2, sy = (img.naturalHeight - m) / 2;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, lado, lado);
+    ctx.drawImage(img, sx, sy, m, m, 0, 0, lado, lado);
+    return c;
+  }
+
+  // Codifica el patrón en el formato .patt de ARToolKit / AR.js:
+  // 4 orientaciones (0°, -90°, -180°, -270°), cada una con 3 canales (B, G, R) de 16 × 16 valores
+  function codificarPatt(imagenCuadrada) {
+    const c = document.createElement('canvas');
+    c.width = c.height = 16;
+    const ctx = c.getContext('2d');
+    let texto = '';
+    for (let o = 0; o > -2 * Math.PI; o -= Math.PI / 2) {
+      ctx.save();
+      ctx.clearRect(0, 0, 16, 16);
+      ctx.translate(8, 8);
+      ctx.rotate(o);
+      ctx.drawImage(imagenCuadrada, -8, -8, 16, 16);
+      ctx.restore();
+      const datos = ctx.getImageData(0, 0, 16, 16).data;
+      if (o !== 0) texto += '\n';
+      for (let canal = 2; canal >= 0; canal--) {
+        for (let y = 0; y < 16; y++) {
+          const fila = [];
+          for (let x = 0; x < 16; x++) fila.push(String(datos[(y * 16 + x) * 4 + canal]).padStart(3));
+          texto += fila.join(' ') + '\n';
+        }
+      }
+    }
+    return texto;
+  }
+
+  // Dibuja el marcador completo para imprimir: margen blanco, cuadro negro y la imagen al centro
+  function marcadorImprimible(imagenCuadrada, lado = 1024) {
+    const c = document.createElement('canvas');
+    c.width = c.height = lado;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, lado, lado);
+    const negro = lado * (1 - 2 * MARGEN_BLANCO);
+    const inicioNegro = lado * MARGEN_BLANCO;
+    ctx.fillStyle = '#000';
+    ctx.fillRect(inicioNegro, inicioNegro, negro, negro);
+    const interior = negro * PROPORCION_PATRON;
+    const inicioInterior = (lado - interior) / 2;
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(imagenCuadrada, inicioInterior, inicioInterior, interior, interior);
+    return c.toDataURL('image/png');
+  }
+
+  // Aviso si la imagen es simétrica al girarla (el marcador sería ambiguo)
+  function esSimetrica(imagenCuadrada) {
+    const c = document.createElement('canvas');
+    c.width = c.height = 16;
+    const ctx = c.getContext('2d');
+    ctx.drawImage(imagenCuadrada, 0, 0, 16, 16);
+    const a = ctx.getImageData(0, 0, 16, 16).data;
+    ctx.save(); ctx.translate(8, 8); ctx.rotate(Math.PI / 2);
+    ctx.drawImage(imagenCuadrada, -8, -8, 16, 16); ctx.restore();
+    const b = ctx.getImageData(0, 0, 16, 16).data;
+    let dif = 0;
+    for (let i = 0; i < a.length; i += 4) dif += Math.abs(a[i] - b[i]);
+    return dif / 256 < 12;
+  }
+
+  // Revisa el fondo (debe ser claro) y cuánto dibujo queda al reducir la imagen a 16 × 16
+  function revisarImagen(imagenCuadrada) {
+    const c = document.createElement('canvas');
+    c.width = c.height = 16;
+    const ctx = c.getContext('2d');
+    ctx.drawImage(imagenCuadrada, 0, 0, 16, 16);
+    const d = ctx.getImageData(0, 0, 16, 16).data;
+    let borde = 0, nBorde = 0, oscuros = 0;
+    for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) {
+      const i = (y * 16 + x) * 4;
+      const l = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+      if (l < 128) oscuros++;
+      if (x === 0 || y === 0 || x === 15 || y === 15) { borde += l; nBorde++; }
+    }
+    return { fondoOscuro: borde / nBorde < 110, cobertura: oscuros / 256 };
+  }
+
+  function generar(img) {
+    const cuadro = cuadrado(img, 512);
+    const rev = revisarImagen(cuadro);
+    return { patt: codificarPatt(cuadro), png: marcadorImprimible(cuadro), simetrica: esSimetrica(cuadro),
+             fondoOscuro: rev.fondoOscuro, cobertura: rev.cobertura };
+  }
+  window.generar = generar; // disponible también desde la consola
+
+  function enlaceDescarga(a, nombre, contenido, tipo) {
+    if (contenido.startsWith('data:')) { a.href = contenido; }
+    else { a.href = URL.createObjectURL(new Blob([contenido], { type: tipo })); }
+    a.download = nombre;
+  }
+
+  document.getElementById('archivos').addEventListener('change', e => {
+    const archivo = e.target.files[0];
+    if (!archivo) return;
+    const img = new Image();
+    img.onload = () => {
+      const r = generar(img);
+      const avisos = [];
+      if (r.fondoOscuro) avisos.push('El fondo de la imagen es oscuro: se va a fundir con el borde negro del marcador y la cámara no lo va a reconocer. Usa fondo blanco.');
+      if (r.cobertura < 0.04) avisos.push('El dibujo es muy pequeño o de líneas muy finas: casi desaparece al reducirlo. Agrándalo para que ocupe casi todo el cuadro.');
+      if (r.simetrica) avisos.push('La imagen se ve casi igual al girarla. El marcador puede fallar: prueba con una imagen menos simétrica.');
+      const resultados = document.getElementById('resultados');
+      resultados.innerHTML = '';
+      const item = document.createElement('div');
+      item.className = 'item';
+      item.innerHTML = `
+        <img alt="Vista previa del marcador">
+        <div>
+          <div class="nota">${avisos.length ? 'Revisa estos avisos antes de usarlo:' : 'La imagen cumple las pautas. Descarga los dos archivos:'}</div>
+          ${avisos.map(t => '<div class="aviso">' + t + '</div>').join('')}
+          <div class="botones">
+            <a class="patt">Descargar marcador.patt</a>
+            <a class="png secundario">Descargar marcador-imprimir.png</a>
+          </div>
+        </div>`;
+      item.querySelector('img').src = r.png;
+      enlaceDescarga(item.querySelector('.patt'), 'marcador.patt', r.patt, 'text/plain');
+      enlaceDescarga(item.querySelector('.png'), 'marcador-imprimir.png', r.png);
+      resultados.appendChild(item);
+    };
+    img.src = URL.createObjectURL(archivo);
+    e.target.value = '';
+  });
+</script>
+</body>
+</html>

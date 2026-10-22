@@ -23,10 +23,15 @@
       archivo: '3dmodel.glb',
 
       // Ajustes de posición. 1 = el ancho del cuadro negro del marcador
+      // Dónde va a estar el marcador (solo cambia algo para 'modelo'):
+      //   'mesa'  → marcador acostado (mesa, piso): el modelo queda de pie sobre el papel
+      //   'pared' → marcador vertical (pared, pantalla, afiche): el modelo mira de frente a la cámara
+      orientacion: 'pared',
+
       escala: 1,        // tamaño del contenido
-      altura: 0,        // cuánto flota sobre el papel
-      giro: 0,          // rotación en grados alrededor del eje vertical
-      animarGiro: true  // el modelo gira lentamente (solo para 'modelo')
+      altura: 0,        // 'mesa': cuánto flota sobre el papel · 'pared': cuánto sube (negativo = baja)
+      giro: 0,          // rotación en grados sobre su propio eje vertical (180 = lo voltea)
+      animarGiro: true  // el modelo gira lentamente sobre sí mismo (solo para 'modelo')
     };
   </script>
   <!-- ========================================================== -->
@@ -120,12 +125,22 @@
     marcador.setAttribute('type', 'pattern');
     marcador.setAttribute('url', CONFIG.marcador);
 
+    // Orientación: con el marcador en una pared, el modelo se inclina 90° para mirar a la cámara.
+    // (El video ya queda pegado al plano del marcador, así que no necesita este ajuste.)
+    const soporte = document.createElement('a-entity');
+    if (CONFIG.orientacion === 'pared' && CONFIG.tipo === 'modelo') {
+      soporte.setAttribute('rotation', '-90 0 0');
+    } else if (CONFIG.orientacion && !['mesa', 'pared'].includes(CONFIG.orientacion)) {
+      mostrarError(`Orientación desconocida: "${CONFIG.orientacion}". Usa 'mesa' o 'pared'.`);
+    }
+    marcador.appendChild(soporte);
+
     // Contenedor que aplica escala, altura y giro
     const contenido = document.createElement('a-entity');
     contenido.setAttribute('position', `0 ${CONFIG.altura} 0`);
     contenido.setAttribute('rotation', `0 ${CONFIG.giro} 0`);
     contenido.setAttribute('scale', `${CONFIG.escala} ${CONFIG.escala} ${CONFIG.escala}`);
-    marcador.appendChild(contenido);
+    soporte.appendChild(contenido);
 
     let video = null;
 
